@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Incheon Buildings</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="./examples/main.css">
+	</head>
+
+	<body>
+		<div id="info">
+			Incheon Buildings - GLTFLoader<br />
+		</div>
+
+<script type="module">
+
+import * as THREE from '../build/three.module.js';
+
+import { OrbitControls } from './examples/jsm/controls/OrbitControls.js';
+
+
+import Stats from './examples/jsm/libs/stats.module.js';
+//import { GUI } from './jsm/libs/dat.gui.module.js';
+
+
+import { GltfUtil } from './gltf_util.js';
+let gltfUtil = null; // init later
+
+/////////////////////////////////////////////////////////////////////////////
+class ColorGUIHelper {
+
+	constructor( object, prop ) {
+
+		this.object = object;
+		this.prop = prop;
+
+	}
+
+	get value() {
+
+		return `#${this.object[ this.prop ].getHexString()}`;
+
+	}
+	set value( hexString ) {
+
+		this.object[ this.prop ].set( hexString );
+
+	}
+
+}
+/////// Three.js Scene //////////////////////////////////////////////////////
+var camera, scene, renderer, controls;
+let container, stats;
+//const gui = new GUI();
+
+const frustum = new THREE.Frustum();
+let renderRequested = false; //Redering On Demand
+
+
+
+// picking
+let pickingScene, pickingTexture;
+const pickingData = [];
+const highlightBox = new THREE.Mesh(	new THREE.BoxGeometry(), new THREE.MeshLambertMaterial( { color: 0xffff00 }	) );
+const pointer = new THREE.Vector2();
+const offset = new THREE.Vector3( 10, 10, 10 );
+
+
+
+
+init();
+
+
+function init() {
+
+	container = document.createElement( 'div' );
+	document.body.appendChild( container );
+
+	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
+	camera.position.set( 50, 100, 50 );
+
+	scene = new THREE.Scene();
+	//scene.background = new THREE.Color( 0x111111 );
+	scene.background = new THREE.Color( 0xcccccc );
+
+	pickingScene = new THREE.Scene();
+	pickingTexture = new THREE.WebGLRenderTarget( 1, 1 );
+
+	//Lights
+	const light1 = new THREE.DirectionalLight( 0xffeeff, 0.8 );
+	light1.position.set( 1, 1, 1 );
+	scene.add( light1 );
+	const light2 = new THREE.DirectionalLight( 0xffffff, 0.8 );
+	light2.position.set( - 1, 0.5, - 1 );
+	scene.add( light2 );
+	const ambientLight = new THREE.AmbientLight( 0xffff00, 0.5 );
+	scene.add( ambientLight );
+
+	
+
+	/////////////////////////////////////////////////////////////////
+
+	renderer = new THREE.WebGLRenderer( { antialias: true } );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+	renderer.toneMappingExposure = 1;
+	renderer.outputEncoding = THREE.sRGBEncoding;
+	container.appendChild( renderer.domElement );
+
+	const pmremGenerator = new THREE.PMREMGenerator( renderer );
+	pmremGenerator.compileEquirectangularShader();
+
+	controls = new OrbitControls( camera, renderer.domElement );
+	controls.enableDamping = true; //damping
+	controls.dampingFactor = 0.25; //damping inertia
+	// How far you can dolly in and out ( PerspectiveCamera only )
+	controls.minDistance = 50;
+	controls.maxDistance = 1000000;
+
+	controls.minPolarAngle = 0; // radians
+	controls.maxPolarAngle = Math.PI; // radians
+	controls.minAzimuthAngle = - Math.PI / 12; // radians
+	controls.maxAzimuthAngle = Math.PI / 12; // radians
+
+	//controls.enableRotate = false;
+	//controls.autoRotate = true; // enable rotation
+	//controls.rotateSpeed = 0.1; // Set to false to disable panning
+
+	controls.keyPanSpeed = 10.0;
+
+	controls.target.set( 0, 0, - 0.5 );
+	controls.addEventListener( 'change', requestRenderIfNotRequested );
+	controls.update();
+
+	//////////////////////////////////////
+	stats = new Stats();
+	container.appendChild( stats.dom );
+
+	//createGUIs( 0xffffff, 0.7 );
+
+	/////////////////////////////////////////////////
+
+	//Window resize support
+	window.addEventListener( 'resize', () => {
+
+		camera.aspect = window.innerWidth / window.innerHeight;
+		camera.updateProjectionMatrix();
+		renderer.setSize( window.innerWidth, window.innerHeight );
+
+		renderRequested = false;
+		requestRenderIfNotRequested();
+
+	} );
+
+	// Load Buildings //////////////////////////////////////////////
+    gltfUtil = new GltfUtil(scene, camera, controls);
+	gltfUtil.loadBuildings();
+
+	AnimationLoop();
+
+	renderer.domElement.addEventListener( 'pointermove', onPointerMove );
+
+}
+
+////////////////////////////////////////////////////////////////
+//Rendering (Animation) function
+function AnimationLoop() {
+
+	renderRequested = false;
+	resizeRendererToDisplaySize( renderer );
+
+	controls.update();
+	pick();
+	stats.update();
+
+	// camera와 tile 간의 거리가 가까워지면 로드한다.
+	if (gltfUtil) {
+        gltfUtil.updateBuildingObjects();
+	} else {
+		console.log('gltfUtil has not ready yet')
+	}
+
+	renderer.setRenderTarget( null );//??
+	renderer.render( scene, camera );
+
+}
+
+function requestRenderIfNotRequested() {
+
+	if ( ! renderRequested ) {
+
+		renderRequested = true;
+		requestAnimationFrame( AnimationLoop );
+
+	}
+
+}
+
+//Auto-adjust camera to window size
+function resizeRendererToDisplaySize( renderer ) {
+
+	const canvas = renderer.domElement;
+	const width = canvas.clientWidth;
+	const height = canvas.clientHeight;
+	if ( canvas.width !== width || canvas.height !== height ) {
+
+		renderer.setSize( width, height, false );
+		camera.aspect = width / height;
+		camera.updateProjectionMatrix();
+
+	}
+
+}
+
+function onPointerMove( e ) {
+
+	pointer.x = e.clientX;
+	pointer.y = e.clientY;
+
+}
+////////////////////////////////////////////////////////////////////////////
+// GUI
+////////////////////////////////////////////////////////////////////////////
+
+// makeInstance( geometries, 0x44aa88, 0.7 );
+// createGUIs( 0xffffff, 0.7 );
+
+function createGUIs( color, sfactor ) {
+
+	const material = new THREE.MeshPhongMaterial( { color } );
+
+	//const mesh = new THREE.Mesh( geometries, material );
+	//scene.add( mesh );
+
+	//mesh.scale.x = sfactor;
+
+	const folder = gui.addFolder( 'Buildings' ); // `Buildings${x}`
+	folder.addColor( new ColorGUIHelper( material, 'color' ), 'value' )
+		.name( 'color' )
+		.onChange( requestRenderIfNotRequested );
+	folder.add( sfactor, 'scale', .1, 1.5 )
+		.name( 'scale' )
+		.onChange( requestRenderIfNotRequested );
+	folder.open();
+
+}
+
+
+
+
+
+function pick() {
+
+	//render the picking scene off-screen
+	// set the view offset to represent just a single pixel under the mouse
+	camera.setViewOffset( renderer.domElement.width, renderer.domElement.height, pointer.x * window.devicePixelRatio | 0, pointer.y * window.devicePixelRatio | 0, 1, 1 );
+
+	// render the scene
+	renderer.setRenderTarget( pickingTexture );
+	renderer.render( pickingScene, camera );
+
+	// clear the view offset so rendering returns to normal
+	camera.clearViewOffset();
+
+	//create buffer for reading single pixel
+	const pixelBuffer = new Uint8Array( 4 );
+
+	//read the pixel
+	renderer.readRenderTargetPixels( pickingTexture, 0, 0, 1, 1, pixelBuffer );
+
+	//interpret the pixel as an ID
+	const id = ( pixelBuffer[ 0 ] << 16 ) | ( pixelBuffer[ 1 ] << 8 ) | ( pixelBuffer[ 2 ] );
+	const data = pickingData[ id ];
+
+	if ( data ) {
+
+		//move our highlightBox so that it surrounds the picked object
+		if ( data.position && data.rotation && data.scale ) {
+
+			highlightBox.position.copy( data.position );
+			highlightBox.rotation.copy( data.rotation );
+			highlightBox.scale.copy( data.scale ).add( offset );
+			highlightBox.visible = true;
+
+		}
+
+	} else {
+
+		highlightBox.visible = false;
+
+	}
+
+}
+
+</script>
+
+	</body>
+</html>
