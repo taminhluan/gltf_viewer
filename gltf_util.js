@@ -1,4 +1,4 @@
-import * as THREE from '../build/three.module.js';
+import * as THREE from './build/three.module.js';
 import { dracoBuildings } from './examples/MyModels/hasDraco.js';
 import { GLTFLoader } from './examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from './examples/jsm/loaders/DRACOLoader.js';
