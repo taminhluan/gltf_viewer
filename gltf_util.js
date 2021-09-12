@@ -12,9 +12,11 @@ var _vertexShader = `
       gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }
 `;
-var _fragmentShader = `
-	//#extension GL_OES_standard_derivatives : enable
 
+
+	//#extension GL_OES_standard_derivatives : enable
+var _fragmentShader = `
+    #extension GL_OES_standard_derivatives : enable
 	varying vec2 vUv;
 	uniform float thickness;
 
@@ -53,10 +55,12 @@ const buildingObjects = []; // list of THREE.Group
 const sfactor = 0.7;	//scale factor of each building
 
 class GltfUtil {
-    constructor(scene, camera, controls) {
+    constructor(scene, camera, controls, bim3d) {
         this.scene = scene;
         this.camera = camera;
         this.controls = controls;
+
+        this.bim3d = bim3d;
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////
@@ -80,16 +84,16 @@ class GltfUtil {
         for (let i = 0; i < tiles.length; i++) {
 
             //console.log( "building_num in tile " + i + ": " + tiles[ i ].buildings.length );
-            this.drawRegions(tiles[i].buildings); // Draw all tile box
+            // this.drawRegions(tiles[i].buildings); // Draw all tile box // luantm turn off
 
         }
 
-        //fitCameraToObject( region ); // Fit to Overall Region
+        this.fitCameraToObject( region ); // Fit to Overall Region
 
         //// Load Building Gltfs
         this.loadBuildingObjects(0); // loading 0-th tile
 
-        this.fitCameraToObject(tiles[0]); // Fit to 0-th tile
+        // this.fitCameraToObject(tiles[0]); // Fit to 0-th tile
 
         // // 모든 타일을 로딩 ? - 리소스 부족
         // let all_building_num = tiles[ 0 ].num_buildings;
@@ -200,7 +204,12 @@ class GltfUtil {
         regionMesh.position.set((region.x_min + region.x_max) / 2, (region.y_min + region.y_max) / 2, (region.z_min + region.z_max) / 2);
         group.add(regionMesh);
         group.add(new THREE.BoxHelper(group, 0xffff00));
-        this.scene.add(group);
+        if (!this.bim3d) {
+            this.bim3d = new THREE.Object3D();
+            this.scene.add(this.bim3d);
+            this.bim3d.add(group);
+        }
+        
 
         // make tiles (subregions)
         const NUM_DIV_X = 200;//100; // X-axis divide
@@ -331,7 +340,7 @@ class GltfUtil {
         regionMesh.position.set((tile.x_min + tile.x_max) / 2, (tile.y_min + tile.y_max) / 2, (region.z_min + region.z_max) / 2);
         group.add(regionMesh);
         group.add(new THREE.BoxHelper(group, color));
-        this.scene.add(group);
+        this.bim3d.add(group);
 
     }
 
@@ -462,7 +471,7 @@ class GltfUtil {
             // Add group to buildingObjects array(list)
             buildingObjects[tile_index] = group.guid; //group
 
-            this.scene.add(group); //
+            this.bim3d.add(group); //
 
             //fitCameraToObject( tiles[ tile_index ] ); // Fit view to the tile
 

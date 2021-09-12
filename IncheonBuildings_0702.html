@@ -32,9 +32,10 @@ var _vertexShader = `
       gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }
 `;
-var _fragmentShader = `
-	//#extension GL_OES_standard_derivatives : enable
 
+	//
+var _fragmentShader = `
+	// #extension GL_OES_standard_derivatives : enable
 	varying vec2 vUv;
 	uniform float thickness;
 

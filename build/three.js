@@ -5908,13 +5908,9 @@
 			this.version = 0;
 		}
 
-		onBuild()
-		/* shaderobject, renderer */
-		{}
+		onBuild() {}
 
-		onBeforeCompile()
-		/* shaderobject, renderer */
-		{}
+		onBeforeCompile() {}
 
 		customProgramCacheKey() {
 			return this.onBeforeCompile.toString();
@@ -7947,17 +7943,17 @@
 		clone() {
 			/*
 			 // Handle primitives
-				 const parameters = this.parameters;
-				 if ( parameters !== undefined ) {
-				 const values = [];
-				 for ( const key in parameters ) {
-				 values.push( parameters[ key ] );
-				 }
-				 const geometry = Object.create( this.constructor.prototype );
+					 const parameters = this.parameters;
+					 if ( parameters !== undefined ) {
+					 const values = [];
+					 for ( const key in parameters ) {
+					 values.push( parameters[ key ] );
+					 }
+					 const geometry = Object.create( this.constructor.prototype );
 			 this.constructor.apply( geometry, values );
 			 return geometry;
-				 }
-				 return new this.constructor().copy( this );
+					 }
+					 return new this.constructor().copy( this );
 			 */
 			return new BufferGeometry().copy(this);
 		}
@@ -17702,9 +17698,7 @@
 			_isContextLost = true;
 		}
 
-		function onContextRestore()
-		/* event */
-		{
+		function onContextRestore() {
 			console.log('THREE.WebGLRenderer: Context Restored.');
 			_isContextLost = false;
 			const infoAutoReset = info.autoReset;
@@ -18819,9 +18813,7 @@
 			return new FogExp2(this.color, this.density);
 		}
 
-		toJSON()
-		/* meta */
-		{
+		toJSON() {
 			return {
 				type: 'FogExp2',
 				color: this.color.getHex(),
@@ -18845,9 +18837,7 @@
 			return new Fog(this.color, this.near, this.far);
 		}
 
-		toJSON()
-		/* meta */
-		{
+		toJSON() {
 			return {
 				type: 'Fog',
 				color: this.color.getHex(),
@@ -21082,9 +21072,7 @@
 		//	- t [0 .. 1]
 
 
-		getPoint()
-		/* t, optionalTarget */
-		{
+		getPoint() {
 			console.warn('THREE.Curve: .getPoint() not implemented.');
 			return null;
 		} // Get point at relative position in curve according to arc length
@@ -22498,9 +22486,7 @@
 
 
 	function isValidDiagonal(a, b) {
-		return a.next.i !== b.i && a.prev.i !== b.i && !intersectsPolygon(a, b) && ( // dones't intersect other edges
-		locallyInside(a, b) && locallyInside(b, a) && middleInside(a, b) && ( // locally visible
-		area(a.prev, a, b.prev) || area(a, b.prev, b)) || // does not create opposite-facing sectors
+		return a.next.i !== b.i && a.prev.i !== b.i && !intersectsPolygon(a, b) && (locallyInside(a, b) && locallyInside(b, a) && middleInside(a, b) && (area(a.prev, a, b.prev) || area(a, b.prev, b)) || // does not create opposite-facing sectors
 		equals(a, b) && area(a.prev, a, a.next) > 0 && area(b.prev, b, b.next) > 0); // special zero-length case
 	} // signed area of a triangle
 
@@ -25403,15 +25389,11 @@
 		} // Template methods for derived classes:
 
 
-		interpolate_()
-		/* i1, t0, t, t1 */
-		{
+		interpolate_() {
 			throw new Error('call to abstract method'); // implementations shall return this.resultBuffer
 		}
 
-		intervalChanged_()
-		/* i1, t0, t1 */
-		{// empty
+		intervalChanged_() {// empty
 		}
 
 	} // ALIAS DEFINITIONS
@@ -26404,9 +26386,7 @@
 			this.requestHeader = {};
 		}
 
-		load()
-		/* url, onLoad, onProgress, onError */
-		{}
+		load() {}
 
 		loadAsync(url, onProgress) {
 			const scope = this;
@@ -26415,9 +26395,7 @@
 			});
 		}
 
-		parse()
-		/* data */
-		{}
+		parse() {}
 
 		setCrossOrigin(crossOrigin) {
 			this.crossOrigin = crossOrigin;
@@ -32767,9 +32745,7 @@
 			super();
 			this.material = material;
 
-			this.render = function ()
-			/* renderCallback */
-			{};
+			this.render = function () {};
 
 			this.hasPositions = false;
 			this.hasNormals = false;
@@ -32949,15 +32925,15 @@
 			// TODO: delete this comment?
 			const distanceGeometry = new THREE.IcosahedronBufferGeometry( 1, 2 );
 			const distanceMaterial = new THREE.MeshBasicMaterial( { color: hexColor, fog: false, wireframe: true, opacity: 0.1, transparent: true } );
-			this.lightSphere = new THREE.Mesh( bulbGeometry, bulbMaterial );
+				this.lightSphere = new THREE.Mesh( bulbGeometry, bulbMaterial );
 			this.lightDistance = new THREE.Mesh( distanceGeometry, distanceMaterial );
-			const d = light.distance;
-			if ( d === 0.0 ) {
-				this.lightDistance.visible = false;
-			} else {
-				this.lightDistance.scale.set( d, d, d );
-			}
-			this.add( this.lightDistance );
+				const d = light.distance;
+				if ( d === 0.0 ) {
+					this.lightDistance.visible = false;
+				} else {
+					this.lightDistance.scale.set( d, d, d );
+				}
+				this.add( this.lightDistance );
 			*/
 		}
 
@@ -32974,12 +32950,12 @@
 			}
 			/*
 			const d = this.light.distance;
-				if ( d === 0.0 ) {
-					this.lightDistance.visible = false;
-				} else {
-					this.lightDistance.visible = true;
+					if ( d === 0.0 ) {
+						this.lightDistance.visible = false;
+					} else {
+						this.lightDistance.visible = true;
 				this.lightDistance.scale.set( d, d, d );
-				}
+					}
 			*/
 
 		}
@@ -33378,7 +33354,7 @@
 			1/___0/|
 			| 6__|_7
 			2/___3/
-				0: max.x, max.y, max.z
+					0: max.x, max.y, max.z
 			1: min.x, max.y, max.z
 			2: min.x, min.y, max.z
 			3: max.x, min.y, max.z
@@ -34672,14 +34648,10 @@
 	};
 
 	Loader.Handlers = {
-		add: function ()
-		/* regex, loader */
-		{
+		add: function () {
 			console.error('THREE.Loader: Handlers.add() has been removed. Use LoadingManager.addHandler() instead.');
 		},
-		get: function ()
-		/* file */
-		{
+		get: function () {
 			console.error('THREE.Loader: Handlers.get() has been removed. Use LoadingManager.getHandler() instead.');
 		}
 	};
@@ -34767,9 +34739,7 @@
 		return vector.applyMatrix3(this);
 	};
 
-	Matrix3.prototype.multiplyVector3Array = function ()
-	/* a */
-	{
+	Matrix3.prototype.multiplyVector3Array = function () {
 		console.error('THREE.Matrix3: .multiplyVector3Array() has been removed.');
 	};
 
@@ -34778,9 +34748,7 @@
 		return attribute.applyMatrix3(this);
 	};
 
-	Matrix3.prototype.applyToVector3Array = function ()
-	/* array, offset, length */
-	{
+	Matrix3.prototype.applyToVector3Array = function () {
 		console.error('THREE.Matrix3: .applyToVector3Array() has been removed.');
 	};
 
@@ -34824,9 +34792,7 @@
 		return vector.applyMatrix4(this);
 	};
 
-	Matrix4.prototype.multiplyVector3Array = function ()
-	/* a */
-	{
+	Matrix4.prototype.multiplyVector3Array = function () {
 		console.error('THREE.Matrix4: .multiplyVector3Array() has been removed.');
 	};
 
@@ -34865,9 +34831,7 @@
 		return attribute.applyMatrix4(this);
 	};
 
-	Matrix4.prototype.applyToVector3Array = function ()
-	/* array, offset, length */
-	{
+	Matrix4.prototype.applyToVector3Array = function () {
 		console.error('THREE.Matrix4: .applyToVector3Array() has been removed.');
 	};
 
@@ -35200,9 +35164,7 @@
 				console.warn('THREE.BufferAttribute: .dynamic has been deprecated. Use .usage instead.');
 				return this.usage === DynamicDrawUsage;
 			},
-			set: function ()
-			/* value */
-			{
+			set: function () {
 				console.warn('THREE.BufferAttribute: .dynamic has been deprecated. Use .usage instead.');
 				this.setUsage(DynamicDrawUsage);
 			}
@@ -35215,13 +35177,9 @@
 		return this;
 	};
 
-	BufferAttribute.prototype.copyIndicesArray = function ()
-	/* indices */
-	{
+	BufferAttribute.prototype.copyIndicesArray = function () {
 		console.error('THREE.BufferAttribute: .copyIndicesArray() has been removed.');
-	}, BufferAttribute.prototype.setArray = function ()
-	/* array */
-	{
+	}, BufferAttribute.prototype.setArray = function () {
 		console.error('THREE.BufferAttribute: .setArray has been removed. Use BufferGeometry .setAttribute to replace/resize attribute buffers');
 	}; //
 
@@ -35296,9 +35254,7 @@
 		return this;
 	};
 
-	InterleavedBuffer.prototype.setArray = function ()
-	/* array */
-	{
+	InterleavedBuffer.prototype.setArray = function () {
 		console.error('THREE.InterleavedBuffer: .setArray has been removed. Use BufferGeometry .setAttribute to replace/resize attribute buffers');
 	}; //
 
@@ -35524,9 +35480,7 @@
 				console.warn('THREE.WebGLRenderer: .shadowMapCullFace has been removed. Set Material.shadowSide instead.');
 				return undefined;
 			},
-			set: function ()
-			/* value */
-			{
+			set: function () {
 				console.warn('THREE.WebGLRenderer: .shadowMapCullFace has been removed. Set Material.shadowSide instead.');
 			}
 		},
@@ -35577,9 +35531,7 @@
 				console.warn('THREE.WebGLRenderer: .shadowMap.cullFace has been removed. Set Material.shadowSide instead.');
 				return undefined;
 			},
-			set: function ()
-			/* cullFace */
-			{
+			set: function () {
 				console.warn('THREE.WebGLRenderer: .shadowMap.cullFace has been removed. Set Material.shadowSide instead.');
 			}
 		},
@@ -35774,19 +35726,13 @@
 	} //
 
 	const SceneUtils = {
-		createMultiMaterialObject: function ()
-		/* geometry, materials */
-		{
+		createMultiMaterialObject: function () {
 			console.error('THREE.SceneUtils has been moved to /examples/jsm/utils/SceneUtils.js');
 		},
-		detach: function ()
-		/* child, parent, scene */
-		{
+		detach: function () {
 			console.error('THREE.SceneUtils has been moved to /examples/jsm/utils/SceneUtils.js');
 		},
-		attach: function ()
-		/* child, scene, parent */
-		{
+		attach: function () {
 			console.error('THREE.SceneUtils has been moved to /examples/jsm/utils/SceneUtils.js');
 		}
 	}; //
