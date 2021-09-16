@@ -463,7 +463,7 @@ class GltfUtil {
             } //for-blist
 
             // Draw BoXHelper
-            group.add(new THREE.BoxHelper(group, 0x00ff00));
+            // group.add(new THREE.BoxHelper(group, 0x00ff00));
 
             // Add a group to Scene
             console.log(group);

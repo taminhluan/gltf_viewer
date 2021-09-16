@@ -27,5 +27,7 @@ test/treeshake/stats.html
 **/node_modules
 
 node_modules/
-examples/MyModels/
+examples/MyModels/draco
+examples/MyModels/glb
+examples/MyModels/Converted_Location.csv
 package-lock.json
