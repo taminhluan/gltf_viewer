@@ -52,7 +52,7 @@ const region = {
 };
 let tiles = [];	// divided regions
 const buildingObjects = []; // list of THREE.Group
-const sfactor = 0.7;	//scale factor of each building
+// const sfactor = 0.7;	//scale factor of each building
 
 class GltfUtil {
     constructor(scene, camera, controls, bim3d) {
@@ -148,7 +148,7 @@ class GltfUtil {
                 }
                 else if (buildingObjects[i] == ON_LOADING) { // 로딩 중
 
-                    console.log('On going ... loading tile ' + i);
+                    // console.log('On going ... loading tile ' + i);
 
                 }
 
@@ -431,14 +431,22 @@ class GltfUtil {
 
                         //mesh.position.set( child.position.x, child.position.y, child.position.z );
                         //mesh.position.set( child.position.x, child.position.y, 0 );	//높이 값을 0으로 해볼까?
-                        mesh.translateX(building.x_coord);
-                        mesh.translateY(building.y_coord);
-                        mesh.translateZ(building.altitude); //height: building.altitude
+
+                        let mesh_bbox = child.geometry.boundingBox
+                        console.log('child', child)
+                        console.log('building', building)
+
+                        const sfactor = 0.7;	//scale factor
+                        mesh.translateX(building.x_coord - (mesh_bbox.max.x - mesh_bbox.min.x)*child.scale.x*sfactor/2 );
+                        mesh.translateY(building.y_coord + (mesh_bbox.max.z - mesh_bbox.min.z)*child.scale.z*sfactor/2);
+                        mesh.translateZ(building.altitude 
+                            + (mesh_bbox.max.y - mesh_bbox.min.y)*child.scale.y*sfactor/2
+                        ); //height: building.altitude
 
                         mesh.rotation.set(Math.PI / 2, 0, 0);	//rotate 90 degree
 
                         //mesh.scale.set( child.scale.x, child.scale.y, child.scale.z );	//overlap between buildings occur
-                        //const sfactor = 0.7;	//scale factor
+                        
                         mesh.scale.set(child.scale.x * sfactor, child.scale.y * sfactor, child.scale.z * sfactor);
                         mesh.updateMatrixWorld();
 
@@ -521,26 +529,27 @@ class GltfUtil {
                 //console.log( `${building.name}` + ' : \n' + dumpObject( gltf.scene ).join( '\n' ) );
                 gltf.scene.updateMatrixWorld();
                 gltf.scene.children.forEach(function (child) {
-
                     if (child.isMesh) {
 
                         let geometry = child.geometry;
-
-                        const position = new THREE.Vector3();
-                        position.x = building.x_coord;
-                        position.y = building.y_coord;
-                        position.z = building.altitude;
 
                         const rotation = new THREE.Euler();
                         rotation.x = Math.PI / 2;
                         rotation.y = 0;
                         rotation.z = 0;
 
-                        const sfactor = 0.7;	//scale factor
+                        const sfactor = 1.0;	//scale factor
                         const scale = new THREE.Vector3();
                         scale.x = child.scale.x * sfactor;
                         scale.y = child.scale.y * sfactor;
                         scale.z = child.scale.z * sfactor;
+
+                        const position = new THREE.Vector3();
+                        position.x = building.x_coord
+                        //  - ( scale.x / 2 );
+                        position.y = building.y_coord;
+                        position.z = building.altitude
+                        //  + ( scale.z / 2 );
 
                         quaternion.setFromEuler(rotation);
                         matrix.compose(position, quaternion, scale);
