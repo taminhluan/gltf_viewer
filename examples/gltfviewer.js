@@ -221,7 +221,7 @@ class GltfViewer {
 
         // group for building meshes
         buildingsGroup.name = 'buildings-meshes';
-        scene.add( buildingsGroup );
+        this.bim3d.add( buildingsGroup );
         //enablePicking( buildingsGroup, canvas );
 
         this.fitCameraToObject( region ); // Fit to region
