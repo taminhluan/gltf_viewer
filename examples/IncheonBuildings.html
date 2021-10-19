@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">		
+		<meta name="viewport" content="width=device-width, user-scalable=no">
+		<link type="text/css" rel="stylesheet" href="main.css">
+		<title>Incheon Buildings</title>
+	</head>
+
+	<body>
+
+<!-- quadtree lib and script -->
+<script src="./MyModels/quadtree/quadtree.min.js"></script>
+
+<script type="module">
+
+import * as THREE from '../build/three.module.js';
+import { OrbitControls } from './jsm/controls/OrbitControls.js';
+import Stats from './jsm/libs/stats.module.js';
+import { TWEEN } from './jsm/libs/tween.module.min.js';
+
+import { GltfViewer } from './gltfviewer.js';
+//import { pick, enablePicking } from './picker.js';
+
+//import Quadtree from '@timohausmann/quadtree-js';
+
+
+
+/////// Three.js Scene //////////////////////////////////////////////////////
+var camera, scene, renderer, controls;
+var container, stats;
+
+var canvas;
+
+let renderRequested = false; //Redering On Demand
+
+
+
+
+/////////////////////////////////////////////////////////////////
+
+var gltfViewer = undefined;
+init();
+
+
+function init() {
+
+	container = document.createElement( 'div' );
+	document.body.appendChild( container );
+
+	camera = new THREE.PerspectiveCamera( 15, window.innerWidth / window.innerHeight, 0.1, 10000 );
+	camera.position.set( 50, 100, 50 );
+
+	scene = new THREE.Scene();
+	//scene.background = new THREE.Color( 0x111111 );
+	scene.background = new THREE.Color( 0xcccccc );
+
+	//Lights
+	const light1 = new THREE.DirectionalLight( 0xffffff, 0.8 );
+	light1.position.set( 1, 1, 1 );
+	scene.add( light1 );
+	const light2 = new THREE.DirectionalLight( 0xffffff, 0.8 );
+	light2.position.set( - 1, 0.5, - 1 );
+	scene.add( light2 );
+	const ambientLight = new THREE.AmbientLight( 0xffffff, 0.5 );
+	scene.add( ambientLight );
+
+	
+
+	renderer = new THREE.WebGLRenderer( { antialias: true } );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+	renderer.toneMappingExposure = 1;
+	renderer.outputEncoding = THREE.sRGBEncoding;
+	container.appendChild( renderer.domElement );
+
+	canvas = renderer.domElement;
+
+	//const pmremGenerator = new THREE.PMREMGenerator( renderer );
+	//pmremGenerator.compileEquirectangularShader();
+
+	controls = new OrbitControls( camera, renderer.domElement );
+	controls.enableDamping = true; //damping
+	controls.dampingFactor = 0.5;//0.5; //damping inertia
+	// How far you can dolly in and out ( PerspectiveCamera only )
+	controls.minDistance = 1;
+	controls.maxDistance = 1000000;
+	//controls.maxDistance = 1000000000;
+
+	controls.minPolarAngle = - Math.PI; // radians
+	controls.maxPolarAngle = Math.PI; // radians
+	controls.minAzimuthAngle = - Math.PI / 24; // radians
+	controls.maxAzimuthAngle = Math.PI / 24; // radians
+
+	//controls.enableRotate = false;
+	//controls.autoRotate = true; // enable rotation
+	//controls.autoRoll = true;
+	//controls.enablePan = false;
+
+	controls.rotateSpeed = 0.1;
+	controls.keyPanSpeed = 50.0;
+
+	//controls.target.set( 0.5, 0.5, - 0.5 );
+	controls.target.set( 0, 0, 0.5 );
+
+	controls.addEventListener( 'change', requestRenderIfNotRequested );
+	controls.update();
+
+	let bim3d = new THREE.Object3D();
+	gltfViewer = new GltfViewer(scene, camera, controls, bim3d)
+	// Load Buildings //////////////////////////////////////////////
+
+	gltfViewer.loadBuildings(() => {
+		console.log('load building success')
+		scene.add(bim3d);
+	});
+
+	/////////////////////////////////////////////////////////////////
+
+	////////////////////////////////////////////////
+	//stats = new Stats();
+	//container.appendChild( stats.dom );
+
+
+	/////////////////////////////////////////////////
+
+	//Window resize support
+	window.addEventListener( 'resize', () => {
+
+		camera.aspect = window.innerWidth / window.innerHeight;
+		camera.updateProjectionMatrix();
+		renderer.setSize( window.innerWidth, window.innerHeight );
+
+		renderRequested = false;
+		requestRenderIfNotRequested();
+
+	} );
+
+	/////////////////////////////////////////////////////////////////////////
+
+	//TODO: turn on this
+	// renderer.domElement.addEventListener( 'dblclick', onDoubleClick, false );
+
+	/////////////////////////////////////////////////////////////////
+
+	AnimationLoop();
+
+}
+
+////////////////////////////////////////////////////////////////
+//Render (Animation) function
+///////////////////////////////////////////////////////////////
+//const clock = new THREE.Clock();
+function AnimationLoop() {
+	console.log('AnimationLoop')
+
+	renderRequested = false;
+	resizeRendererToDisplaySize( renderer );
+
+	controls.update();
+	//controls.update( clock.getDelta() );
+
+	TWEEN.update();
+	//pick( camera );
+	
+	console.log('update building obecjts', gltfViewer)
+
+	if (gltfViewer) {
+		gltfViewer.updateBuildingObjects();
+	}
+
+	renderer.setRenderTarget( null );//??
+	renderer.render( scene, camera );
+
+	//stats.update();
+
+}
+
+function requestRenderIfNotRequested() {
+	console.log('requestRenderIfNotRequested')
+
+	if ( ! renderRequested ) {
+
+		renderRequested = true;
+		requestAnimationFrame( AnimationLoop );
+
+	}
+
+}
+
+//Auto-adjust camera to window size
+function resizeRendererToDisplaySize( renderer ) {
+
+	const width = canvas.clientWidth;
+	const height = canvas.clientHeight;
+	if ( canvas.width !== width || canvas.height !== height ) {
+
+		renderer.setSize( width, height, false );
+		camera.aspect = width / height;
+		camera.updateProjectionMatrix();
+
+	}
+
+}
+
+
+
+
+</script>
+
+	</body>
+</html>

@@ -31,3 +31,8 @@ examples/MyModels/draco
 examples/MyModels/glb
 examples/MyModels/Converted_Location.csv
 package-lock.json
+
+examples/MyModels/reorder
+examples/MyModels/buildings_info.json
+examples/MyModels/*.zip
+examples/MyModels/Location.csv
