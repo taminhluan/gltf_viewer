@@ -129,5 +129,8 @@
       "build/three.module.js"
     ],
     "directories": {}
+  },
+  "dependencies": {
+    "@timohausmann/quadtree-js": "^1.2.5"
   }
 }

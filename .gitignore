@@ -36,3 +36,4 @@ examples/MyModels/reorder
 examples/MyModels/buildings_info.json
 examples/MyModels/*.zip
 examples/MyModels/Location.csv
+examples/MyModels/gltf_*
