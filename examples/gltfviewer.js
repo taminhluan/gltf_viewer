@@ -24,10 +24,11 @@ var camera, scene, renderer, controls;
 
 
 class GltfViewer {
-    constructor(_scene, _camera, _controls, bim3d) {
+    constructor(_scene, _camera, _controls, bim3d, folder = 'reorder') {
         this.scene = _scene;
         this.camera = _camera;
         this.controls = _controls;
+        this.folder = folder;
         scene = _scene;
         camera = _camera;
         controls = _controls;
@@ -46,7 +47,7 @@ class GltfViewer {
 
         let self = this;
         //json 으로 저장된 Building Information 읽어오기
-        this.readTextFile( './MyModels/buildings_info.json', function ( text ) {
+        this.readTextFile( `./MyModels/${this.folder}/buildings_info.json`, function ( text ) {
 
             [ region, buildings ] = JSON.parse( text );	//building info
 
@@ -272,7 +273,7 @@ class GltfViewer {
 
 
         // Load 3D Meshs
-        loadGltfs( objs, buildingsGroup ).catch( error => {
+        loadGltfs( objs, buildingsGroup, this.folder ).catch( error => {
 
             console.log( 'Gltf Model Loading Error: ' + error );
 

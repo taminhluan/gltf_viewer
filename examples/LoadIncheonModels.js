@@ -15,7 +15,7 @@ dracoLoader.setDecoderPath( 'js/libs/draco/' );
 loader.setDRACOLoader( dracoLoader );
 
 // building mesh file directory
-const reorder_dir = './MyModels/reorder/'; //gltf-transform reorder glb
+// const reorder_dir = './MyModels/reorder/'; //gltf-transform reorder glb
 //const draco_dir = './MyModels/draco/';
 //const glb_dir = './MyModels/glb/'; //gltfpack - glb
 
@@ -100,8 +100,9 @@ function modelLoader( url ) { //'loader'(GltfLoader) is globally defined
 
 }
 
-async function loadGltfs( blist, group ) { //building list(candidates), scene (to add meshes)
+async function loadGltfs( blist, group, folder  ) { //building list(candidates), scene (to add meshes)
 
+	let reorder_dir = `./MyModels/${folder}/`
 	const promises = [];
 	const models = [];
 
