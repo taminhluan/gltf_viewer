@@ -185,12 +185,12 @@ const region = { x_min: 9999999999.0, y_min: 9999999999.0, z_min: 9999999999.0,	
 function main() {
 
 	//const filepath = 'C:\Users\u\Documents\GitHub\THREE.js\examples\MyModels\Location.csv';
-	loadBuildingsFromCSV( './examples/MyModels/location1029.csv', buildings, region );
+	loadBuildingsFromCSV( './examples/MyModels/gltf_1201/location.csv', buildings, region );
 
 	
     // Json 파일로 출력
 	const info = [ region, buildings ];
-	fs.writeFileSync( './examples/MyModels/gltf_1029/buildings_info.json', JSON.stringify( info ) );
+	fs.writeFileSync( './examples/MyModels/gltf_1201/buildings_info.json', JSON.stringify( info ) );
 /*/
     // Json 파일로부터 data 읽어오기
 	const buffer = fs.readFileSync( './examples/MyModels/buildings_info.json' );
