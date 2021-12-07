@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">		
+		<meta name="viewport" content="width=device-width, user-scalable=no">
+		<link type="text/css" rel="stylesheet" href="main.css">
+		<title>Incheon Buildings</title>
+	</head>
+
+	<body>
+
+<!-- quadtree lib and script -->
+<script src="./MyModels/quadtree/quadtree.min.js"></script>
+
+<script type="module">
+
+import * as THREE from '../build/three.module.js';
+import { OrbitControls } from './jsm/controls/OrbitControls.js';
+import Stats from './jsm/libs/stats.module.js';
+import { TWEEN } from './jsm/libs/tween.module.min.js';
+//import { pick, enablePicking } from './picker.js';
+
+
+/////// Three.js Scene //////////////////////////////////////////////////////
+var camera, scene, renderer, controls;
+var container, stats;
+
+var canvas;
+
+const raycaster = new THREE.Raycaster();
+const sceneMeshes = new Array();	// the plane of ground
+
+const treeNodeGroup = new THREE.Group(); // quadtree node mesh (plane)
+
+const pointGroup = new THREE.Group(); // center points of each building
+const floorGroup = new THREE.Group(); // 2d floor plan of building (line segments)
+const surfaceGroup = new THREE.Group(); // 3d surface of building (by extruding from floor plan)
+const lineGroup = new THREE.Group(); // outline of building (line segments)
+const modelGroup = new THREE.Group(); // 3d building model group
+
+const invisibleMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff, transparent: true, opacity: 0 } );
+const whiteMaterial = new THREE.MeshStandardMaterial( { color: 0xffff95, side: THREE.DoubleSide } );
+const blueMaterial = new THREE.MeshStandardMaterial( { color: 0x0011ff, side: THREE.DoubleSide } );
+const greenMaterial = new THREE.MeshStandardMaterial( { color: 0x00ff11, side: THREE.DoubleSide } );
+const redMaterial = new THREE.MeshStandardMaterial( { color: 0xff1100, side: THREE.DoubleSide } );
+const yellowMaterial = new THREE.MeshStandardMaterial( { color: 0xfff555, side: THREE.DoubleSide } );
+/////////////////////////////////////////////////////////////////
+
+
+init();
+
+
+function init() {
+
+	container = document.createElement( 'div' );
+	document.body.appendChild( container );
+
+	camera = new THREE.PerspectiveCamera( 15, window.innerWidth / window.innerHeight, 0.1, 10000 );
+	camera.position.set( 50, 100, 50 );
+
+	scene = new THREE.Scene();
+	//scene.background = new THREE.Color( 0x111111 );
+	scene.background = new THREE.Color( 0xcccccc );
+
+	//Lights
+	const light1 = new THREE.DirectionalLight( 0xffffff, 0.8 );
+	light1.position.set( 1, 1, 1 );
+	scene.add( light1 );
+	const light2 = new THREE.DirectionalLight( 0xffffff, 0.8 );
+	light2.position.set( 1, 0.5, 1 );
+	scene.add( light2 );
+	const ambientLight = new THREE.AmbientLight( 0xffffff, 0.8 );
+	scene.add( ambientLight );
+
+	renderer = new THREE.WebGLRenderer( { antialias: true } );
+	renderer.setPixelRatio( window.devicePixelRatio );
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+	renderer.toneMappingExposure = 1;
+	renderer.outputEncoding = THREE.sRGBEncoding;
+	container.appendChild( renderer.domElement );
+
+	canvas = renderer.domElement;
+
+	controls = new OrbitControls( camera, renderer.domElement );
+	controls.enableDamping = true; //damping
+	controls.dampingFactor = 0.5;//0.5; //damping inertia
+	// How far you can dolly in and out ( PerspectiveCamera only )
+	controls.minDistance = 1;
+	controls.maxDistance = 100000;
+
+	controls.minPolarAngle = - Math.PI; // radians
+	controls.maxPolarAngle = Math.PI; // radians
+	controls.minAzimuthAngle = - Math.PI / 24; // radians
+	controls.maxAzimuthAngle = Math.PI / 24; // radians
+
+	controls.rotateSpeed = 0.1;
+	controls.keyPanSpeed = 50.0;
+
+	controls.target.set( 0.5, 0.5, - 0.5 );
+
+	controls.addEventListener( 'change', render );
+	controls.update();
+
+	// Load Buildings //////////////////////////////////////////////
+
+	loadBuildings();
+
+	/////////////////////////////////////////////////////////////////
+
+	////////////////////////////////////////////////
+	stats = new Stats();
+	container.appendChild( stats.dom );
+
+	/////////////////////////////////////////////////
+
+	//Window resize support
+	window.addEventListener( 'resize', onWindowResize, false );
+
+	/////////////////////////////////////////////////////////////////////////
+
+	renderer.domElement.addEventListener( 'dblclick', onDoubleClick, false );
+
+	/////////////////////////////////////////////////////////////////
+
+	AnimationLoop();
+
+}
+
+////////////////////////////////////////////////////////////////
+//Render (Animation) function
+///////////////////////////////////////////////////////////////
+function AnimationLoop() {
+
+	requestAnimationFrame( AnimationLoop );
+
+	resizeRendererToDisplaySize( renderer );
+
+	controls.update();
+
+	TWEEN.update();
+	//pick( camera );
+
+	updateBuildingObjects();
+
+	render();
+
+	stats.update();
+
+}
+
+function render() {
+
+	renderer.setRenderTarget( null ); //null : canvas is set as the active render target
+	renderer.render( scene, camera );
+
+}
+
+//Auto-adjust camera to window size
+function resizeRendererToDisplaySize( renderer ) {
+
+	const width = canvas.clientWidth;
+	const height = canvas.clientHeight;
+	if ( canvas.width !== width || canvas.height !== height ) {
+
+		renderer.setSize( width, height, false );
+		camera.aspect = width / height;
+		camera.updateProjectionMatrix();
+
+	}
+
+}
+
+function onWindowResize() {
+
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize( window.innerWidth, window.innerHeight );
+
+	render();
+
+}
+
+// double-click event: tweening to the mouse point & loadBuildingObjects
+function onDoubleClick( event ) {
+
+	const mouse = {
+		x: ( event.clientX / renderer.domElement.clientWidth ) * 2 - 1,
+		y: - ( event.clientY / renderer.domElement.clientHeight ) * 2 + 1
+	};
+
+	raycaster.setFromCamera( mouse, camera );
+
+	if ( sceneMeshes.length > 0 ) {
+
+		const intersects = raycaster.intersectObjects( sceneMeshes, false );
+		if ( intersects.length > 0 ) {
+
+			const p = intersects[ 0 ].point;	//intersect point btwn ground plane & camera-mouse vector
+			new TWEEN.Tween( controls.target )
+				.to( {
+					x: p.x,
+					y: p.y,
+					z: p.z
+				}, 1000 )
+				.easing( TWEEN.Easing.Linear.None ) //Quadratic.Out// Linear.None
+				.start();
+
+		}
+
+	}
+
+}
+
+
+
+
+</script>
+
+	</body>
+</html>
