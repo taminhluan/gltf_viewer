@@ -16,9 +16,9 @@ import * as THREE from '../build/three.module.js';
     //////////////////////////////////////////////////////////////////////////////
 
     // buildings and regions
-    let quadTree = null;
-    let treeObjects;	//buildings are saved in treeObjects of Quadtree
-    const region = {
+    var quadTree = null;
+    var treeObjects;	//buildings are saved in treeObjects of Quadtree
+    var region = {
         height: 32698.1240000003,
         width: 38957.82030000002,
         x_max: 305188.9902,
@@ -36,49 +36,70 @@ import * as THREE from '../build/three.module.js';
 
     var canvas;
 
-    const raycaster = new THREE.Raycaster();
-    const sceneMeshes = new Array();	// the plane of ground
+    var raycaster = new THREE.Raycaster();
+    var sceneMeshes = new Array();	// the plane of ground
 
-    const treeNodeGroup = new THREE.Group(); // quadtree node mesh (plane)
+    var treeNodeGroup = new THREE.Group(); // quadtree node mesh (plane)
 
-    const pointGroup = new THREE.Group(); // center points of each building
-    const floorGroup = new THREE.Group(); // 2d floor plan of building (line segments)
-    const surfaceGroup = new THREE.Group(); // 3d surface of building (by extruding from floor plan)
-    const lineGroup = new THREE.Group(); // outline of building (line segments)
-    const modelGroup = new THREE.Group(); // 3d building model group
+    var pointGroup = new THREE.Group(); // center points of each building
+    var floorGroup = new THREE.Group(); // 2d floor plan of building (line segments)
+    var surfaceGroup = new THREE.Group(); // 3d surface of building (by extruding from floor plan)
+    var lineGroup = new THREE.Group(); // outline of building (line segments)
+    var modelGroup = new THREE.Group(); // 3d building model group
 
-    const invisibleMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
-    const whiteMaterial = new THREE.MeshStandardMaterial({ color: 0xffff95, side: THREE.DoubleSide });
-    const blueMaterial = new THREE.MeshStandardMaterial({ color: 0x0011ff, side: THREE.DoubleSide });
-    const greenMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff11, side: THREE.DoubleSide });
-    const redMaterial = new THREE.MeshStandardMaterial({ color: 0xff1100, side: THREE.DoubleSide });
-    const yellowMaterial = new THREE.MeshStandardMaterial({ color: 0xfff555, side: THREE.DoubleSide });
+    var invisibleMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
+    var whiteMaterial = new THREE.MeshStandardMaterial({ color: 0xffff95, side: THREE.DoubleSide });
+    var blueMaterial = new THREE.MeshStandardMaterial({ color: 0x0011ff, side: THREE.DoubleSide });
+    var greenMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff11, side: THREE.DoubleSide });
+    var redMaterial = new THREE.MeshStandardMaterial({ color: 0xff1100, side: THREE.DoubleSide });
+    var yellowMaterial = new THREE.MeshStandardMaterial({ color: 0xfff555, side: THREE.DoubleSide });
     /////////////////////////////////////////////////////////////////
 }
 
 { // copy other global variable
     //-----------------------------------------------------------
-    const DIST_POINTS = 15000; //(euclidian distance)
-    const DIST_FLOOR = 8000;
-    const DIST_SURFACE = 4000;
-    const DIST_OUTLINE = 1500;
+    var DIST_POINTS = 15000; //(euclidian distance)
+    var DIST_FLOOR = 8000;
+    var DIST_SURFACE = 4000;
+    var DIST_OUTLINE = 1500;
 
     //---------------------------------------------------------------------
     var loadedObjects = [];
 
     //---------------------------------------------------------------------
-    const MAXNUM_OBJECTS = 50000;
+    var MAXNUM_OBJECTS = 50000;
 
     //----------------------------------------------------------
-    const is3dPointsLoaded = [false, false, false, false, false];
+    var is3dPointsLoaded = [false, false, false, false, false];
     //const numBuildings = [ 29984, 29992, 29967, 39997, 20000, 29999, 30000, 29996, 21261, 17842, 16857 ];
-    const idxBuildings = [0, 29984, 59976, 89943, 129940, 149940, 179939, 209939, 239935, 261196, 279038, 295895]; //누적
+    var idxBuildings = [0, 29984, 59976, 89943, 129940, 149940, 179939, 209939, 239935, 261196, 279038, 295895]; //누적
 
 }
 
-// for compatible with original code
-//TODO: change to this.camera, this.scene, ...
-var camera, scene, renderer, controls;
+
+
+{ // for compatible with original code
+    //TODO: change to this.camera, this.scene, ...
+    var camera, scene, renderer, controls;
+    var setLOD;
+    var getVisibleNodes;
+    var updateBuildingObjects;
+    var reduceLoadedObjects;
+    var extrudeBuilding;
+    var createBuildingModel;
+    var loadBuildingObjects;
+    var loadBuildings;
+    var load3D;
+    var readTextFileSync;
+    var readTextFile;
+    var makeQuadtree;
+    var drawQuadtree;
+    var makeTreeNodeMeshes;
+    var createPointGroup;
+    var createFloorGroup;
+    var loadScene;
+    var fitCameraToObject;
+}
 class LODViewer {
     constructor(_scene, _camera, _controls, bim3d, folder = 'reorder') {
         this.scene = _scene;
@@ -93,6 +114,25 @@ class LODViewer {
             bim3d = new THREE.Object3D();
         }
         this.bim3d = bim3d;
+
+        readTextFile = this.readTextFile;
+        setLOD = this.setLOD;
+        getVisibleNodes = this.getVisibleNodes;
+        updateBuildingObjects = this.updateBuildingObjects;
+        reduceLoadedObjects = this.reduceLoadedObjects;
+        extrudeBuilding = this.extrudeBuilding;
+        createBuildingModel = this.createBuildingModel;
+        loadBuildingObjects = this.loadBuildingObjects;
+        loadBuildings = this.loadBuildings;
+        load3D = this.load3D;
+        readTextFileSync = this.readTextFileSync;
+        makeQuadtree = this.makeQuadtree;
+        drawQuadtree = this.drawQuadtree;
+        makeTreeNodeMeshes = this.makeTreeNodeMeshes;
+        createPointGroup = this.createPointGroup;
+        createFloorGroup = this.createFloorGroup;
+        loadScene = this.loadScene;
+        fitCameraToObject = this.fitCameraToObject;
     }
 
 
@@ -801,4 +841,8 @@ class LODViewer {
     //////////////////////////////////////////////////////////////////////////
 
 
+}
+
+export {
+    LODViewer
 }
