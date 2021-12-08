@@ -99,9 +99,10 @@ import * as THREE from '../build/three.module.js';
     var createFloorGroup;
     var loadScene;
     var fitCameraToObject;
+    var bim3d;
 }
 class LODViewer {
-    constructor(_scene, _camera, _controls, bim3d, folder = 'reorder') {
+    constructor(_scene, _camera, _controls, _bim3d, folder = 'reorder') {
         this.scene = _scene;
         this.camera = _camera;
         this.controls = _controls;
@@ -110,10 +111,11 @@ class LODViewer {
         camera = _camera;
         controls = _controls;
 
-        if (!bim3d) {
-            bim3d = new THREE.Object3D();
+        if (!_bim3d) {
+            _bim3d = new THREE.Object3D();
         }
-        this.bim3d = bim3d;
+        this.bim3d = _bim3d;
+        bim3d = this.bim3d;
 
         readTextFile = this.readTextFile;
         setLOD = this.setLOD;
@@ -476,7 +478,7 @@ class LODViewer {
     // Load and Organize Building Information
     ////////////////////////////////////////////////////////////////////////////////////////
     // load building info (metadata)
-    loadBuildings() {
+    loadBuildings(callback) {
 
         readTextFile('./MyModels//lod_1201/buildings_2d.json', function (text) {
 
@@ -488,7 +490,7 @@ class LODViewer {
             [quadTree, treeObjects] = makeQuadtree(buildings, region);
 
             loadScene();
-
+            callback();
         });
 
     }
@@ -740,7 +742,7 @@ class LODViewer {
 
     // Load Initial Scene
     loadScene() {
-
+        let DO_NOT_PICK_ME = "do_not_pick_me";
         // create a plane mesh for the region
         const planeGeometry = new THREE.PlaneGeometry(region.width, region.height);
         planeGeometry.computeBoundingBox();
@@ -749,7 +751,9 @@ class LODViewer {
         planeMesh.name = 'ground plane mesh';
         planeMesh.position.set((region.x_min + region.x_max) * 0.5, (region.y_min + region.y_max) * 0.5, 0);
         sceneMeshes.push(planeMesh); //for raycasting (from camera to ground plane)
-        scene.add(planeMesh);
+
+        planeMesh.name = DO_NOT_PICK_ME;
+        bim3d.add(planeMesh);
 
         fitCameraToObject(region); // Fit to region
 
@@ -762,33 +766,35 @@ class LODViewer {
         // make tree node meshes (plane)
         treeNodeGroup.name = 'treeNode-plane meshes';
         makeTreeNodeMeshes(quadTree, treeNodeGroup);
-        scene.add(treeNodeGroup);
+        bim3d.add(treeNodeGroup);
 
         // draw qtree objects as point
         pointGroup.name = 'treeObjects-points';
         createPointGroup(treeObjects, pointGroup); //as point
-        scene.add(pointGroup);
+        bim3d.add(pointGroup);
 
         // group for 2d floor plan as line segments
         floorGroup.name = '2d floor plans';
         createFloorGroup(treeObjects, floorGroup);
-        scene.add(floorGroup);
+        bim3d.add(floorGroup);
 
         // group for extruded surfaces and lines
         surfaceGroup.name = '3d surfaces';
         lineGroup.name = '3d outlines';
-        scene.add(surfaceGroup);
-        scene.add(lineGroup);
+        bim3d.add(surfaceGroup);
+        bim3d.add(lineGroup);
 
         // group for (pre-designed) 3d meshes
         modelGroup.name = '3d meshes';
-        scene.add(modelGroup);
+        bim3d.add(modelGroup);
 
         pointGroup.visible = true;
         floorGroup.visible = false;
         surfaceGroup.visible = false;
         lineGroup.visible = false;
         modelGroup.visible = false;
+
+        scene.add(bim3d)
 
         //enablePicking( modelGroup, canvas );
 
