@@ -38,3 +38,4 @@ examples/MyModels/*.zip
 examples/MyModels/Location.csv
 examples/MyModels/gltf_*
 examples/MyModels/lod_*
+examples/MyModels/3d_*
