@@ -4,7 +4,7 @@ import Stats from '../jsm/libs/stats.module.js';
 import { TWEEN } from '../jsm/libs/tween.module.min.js';
 
 //////////////////////////////////////////////////////////////////////////////
-
+const VISIBLE_ITEM = 5
 // buildings and regions
 let quadTree = null;
 let treeObjects;	//buildings are saved in treeObjects of Quadtree
@@ -38,9 +38,9 @@ const lineGroup = new THREE.Group(); // outline of building (line segments)
 const modelGroup = new THREE.Group(); // 3d building model group
 
 const invisibleMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
-const whiteMaterial = new THREE.MeshStandardMaterial({ color: 0xffff95, side: THREE.DoubleSide });
-const blueMaterial = new THREE.MeshStandardMaterial({ color: 0x0011ff, side: THREE.DoubleSide });
-const greenMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff11, side: THREE.DoubleSide });
+const whiteMaterial = new THREE.MeshBasicMaterial({ color: 0xffff95, side: THREE.DoubleSide });
+const blueMaterial = new THREE.MeshBasicMaterial({ color: 0x0011ff, side: THREE.DoubleSide });
+const greenMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff11, side: THREE.DoubleSide });
 const redMaterial = new THREE.MeshStandardMaterial({ color: 0xff1100, side: THREE.DoubleSide });
 const yellowMaterial = new THREE.MeshStandardMaterial({ color: 0xfff555, side: THREE.DoubleSide });
 /////////////////////////////////////////////////////////////////
@@ -72,11 +72,18 @@ function init() {
     scene.add(ambientLight);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
+    let gl = renderer.getContext()
+    gl.getExtension('EXT_frag_depth')
+
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1;
-    renderer.outputEncoding = THREE.sRGBEncoding;
+    // renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    // renderer.toneMappingExposure = 1;
+    // renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.autoClear = true;
+    renderer.clear();
+    console.log('renderer', renderer)
+
     container.appendChild(renderer.domElement);
 
     canvas = renderer.domElement;
@@ -100,7 +107,6 @@ function init() {
 
     controls.addEventListener('change', () => {
         requestUpdateBuilding()
-        render()
     });
     controls.update();
 
@@ -137,7 +143,7 @@ function requestUpdateBuilding() {
         need_update = true;
         updateBuilding()
     }, 300)
-    
+
 }
 
 function updateBuilding() {
@@ -167,8 +173,8 @@ function updateBuilding() {
                         frustum.containsPoint(new THREE.Vector3(real_x + 500, real_y - 500, 0)) ||
                         frustum.containsPoint(new THREE.Vector3(real_x + 500, real_y + 500, 0))
                     ) {
-                        const dist = camera.position.distanceTo( new THREE.Vector3(real_x, real_y, 0) );
-                        
+                        const dist = camera.position.distanceTo(new THREE.Vector3(real_x, real_y, 0));
+
                         tiles_inside_frustum.push(`${i_x}_${i_y}`)
                         tiles_distances.push(dist)
                     }
@@ -191,19 +197,19 @@ function updateBuilding() {
                 }
                 console.log('tiles_distances', tiles_distances)
             }
-            {// keep 9 nearest items
-                tiles_inside_frustum = tiles_inside_frustum.slice(0, 9)
+            {// keep n nearest items
+                tiles_inside_frustum = tiles_inside_frustum.slice(0, VISIBLE_ITEM)
             }
 
             for (let i = 0; i < floorGroup.children.length; i++) {
                 let group = floorGroup.children[i]
 
-                
+
                 let group_x = parseInt(group.name.split('_')[0])
                 let group_y = parseInt(group.name.split('_')[1])
 
                 let found_at = tiles_inside_frustum.indexOf(group.name)
-                if ( found_at>= 0) {
+                if (found_at >= 0) {
                     tiles_inside_frustum.splice(found_at, 1)
                 } else {
                     floorGroup.remove(floorGroup.children[i])
@@ -212,13 +218,13 @@ function updateBuilding() {
             }
 
             $("#panel").html('')
-            for(let i_tile = 0; i_tile < tiles_inside_frustum.length; i_tile++) {
+            for (let i_tile = 0; i_tile < tiles_inside_frustum.length; i_tile++) {
                 let xy = tiles_inside_frustum[i_tile]
                 let i_x = parseInt(xy.split('_')[0])
                 let i_y = parseInt(xy.split('_')[1])
                 loadFloorTile(i_x, i_y)
             }
-            
+
         }
     }
 }
@@ -241,14 +247,12 @@ function AnimationLoop() {
 
 }
 
-function updateBuildingObjects() {
-
-}
 
 function render() {
+    
+    renderer.clear();
     renderer.setRenderTarget(null); //null : canvas is set as the active render target
     renderer.render(scene, camera);
-
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -277,7 +281,7 @@ async function loadBuildings() {
 
             const geometry = new THREE.BufferGeometry();
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-            const material = new THREE.PointsMaterial({ color: 0x000000, transparent: true, opacity: 50 });
+            const material = new THREE.PointsMaterial({ color: 0x000000, opacity: 50 });
             const points = new THREE.Points(geometry, material);
             pointGroup.add(points);
         }
@@ -320,8 +324,14 @@ function loadFloorTile(x, y) {
                 }
                 const geometry = new THREE.BufferGeometry().setFromPoints(points);
                 const plane = new THREE.Line(geometry, material);
-                group.add(plane);
+                // group.add(plane);
 
+                {
+                    let surface, outline;
+                    [surface, outline] = extrudeBuilding(points, bHeight, 0);
+                    group.add(surface);
+                    group.add( outline );
+                }
 
                 position += 4 * 3 + 4 * n_xy;
             }
@@ -335,6 +345,43 @@ function loadFloorTile(x, y) {
 
     });
 }
+
+
+//////////////////////////////////////////////////////////////////////////////
+function extrudeBuilding(points, height, altitude) {
+
+    const extrudeSettings = {
+        depth: height,
+        bevelEnabled: false
+    };
+
+    const shape = new THREE.Shape();
+    for (let i = 0; i < points.length; i++) {
+
+        if (i == 0) shape.moveTo(points[i].x, points[i].y);
+        else shape.lineTo(points[i].x, points[i].y);
+
+    }
+
+    // 건물 높이에 따라 색깔 다르게
+    const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+    let material = whiteMaterial;
+    if (height >= 100) material = blueMaterial;
+    else if (height >= 20) material = greenMaterial;
+    const mesh = new THREE.Mesh(geometry, material);
+
+    mesh.translateZ(altitude);
+
+    // create Outline
+    const edges = new THREE.EdgesGeometry(geometry, 15);
+    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
+
+    line.translateZ(altitude);
+
+    return [mesh, line];
+
+}
+
 function readTextFile(file, callback) {
 
     var xhr = new XMLHttpRequest();
@@ -348,6 +395,8 @@ function readTextFile(file, callback) {
     xhr.send(null);
 
 }
+
+
 
 function onWindowResize() {
 
