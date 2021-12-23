@@ -240,7 +240,7 @@ class ThreeDLODLoader {
                 let item_length = 12;
                 let position = 0;
 
-                while (position < byteLength / 4) {
+                while (position < byteLength) {
                     let n_xy = dataView.getInt32(position + 4 * 0, true)
                     let altitude = dataView.getFloat32(position + 4 * 1, true)
                     let bHeight = dataView.getFloat32(position + 4 * 2, true)
