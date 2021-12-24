@@ -109,7 +109,7 @@ class ThreeDLODLoader {
                 camera.updateMatrix();
                 camera.updateMatrixWorld();
                 var frustum = new THREE.Frustum();
-                frustum.setFromMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+                frustum.setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
 
                 let needBreak = false;
                 let tiles_inside_frustum = []
