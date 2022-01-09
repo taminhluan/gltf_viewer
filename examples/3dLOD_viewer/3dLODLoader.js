@@ -57,6 +57,10 @@ var extrudeBuilding;
 var readTextFile;
 var fitCameraToObject;
 var bim3d;
+
+var loadModelTile;
+var createBuildingModel;
+var showModelHideFloor;
 class ThreeDLODLoader {
     constructor(_scene, _camera, _controls, _bim3d, folder = 'reorder') {
         this.scene = _scene;
@@ -87,6 +91,9 @@ class ThreeDLODLoader {
         extrudeBuilding = this.extrudeBuilding;
         readTextFile = this.readTextFile;
         fitCameraToObject = this.fitCameraToObject;
+        loadModelTile = this.loadModelTile;
+        createBuildingModel = this.createBuildingModel;
+        showModelHideFloor = this.showModelHideFloor;
     }
 
     requestUpdateBuilding() {
@@ -147,27 +154,55 @@ class ThreeDLODLoader {
                             }
                         }
                     }
-                    console.log('tiles_distances', tiles_distances)
                 }
+
+                let model_tiles_inside_frustum = []
                 {// keep n nearest items
                     tiles_inside_frustum = tiles_inside_frustum.slice(0, VISIBLE_ITEM)
+                    
+                    for (let i = 0; i < tiles_inside_frustum.length; i++) {
+                        let item = tiles_inside_frustum[i]
+                        model_tiles_inside_frustum.push(item);
+                    }
+
+                    model_tiles_inside_frustum = model_tiles_inside_frustum.slice(0, 4);
+
                 }
 
-                for (let i = 0; i < floorGroup.children.length; i++) {
-                    let group = floorGroup.children[i]
+                { // remove unused floor and model
+                    for (let i = 0; i < floorGroup.children.length; i++) {
+                        let group = floorGroup.children[i]
+    
+    
+                        let group_x = parseInt(group.name.split('_')[0])
+                        let group_y = parseInt(group.name.split('_')[1])
+    
+                        let found_at = tiles_inside_frustum.indexOf(group.name)
+                        if (found_at >= 0) {
+                            tiles_inside_frustum.splice(found_at, 1)
+                        } else {
+                            floorGroup.remove(floorGroup.children[i])
+                            console.log(`'remove floor tile:' ${group_x}, ${group_y}`)
+                        }
+                    }
 
-
-                    let group_x = parseInt(group.name.split('_')[0])
-                    let group_y = parseInt(group.name.split('_')[1])
-
-                    let found_at = tiles_inside_frustum.indexOf(group.name)
-                    if (found_at >= 0) {
-                        tiles_inside_frustum.splice(found_at, 1)
-                    } else {
-                        floorGroup.remove(floorGroup.children[i])
-                        console.log(`'remove' ${group_x}, ${group_y}`)
+                    for (let i = 0; i < modelGroup.children.length; i++) {
+                        let group = modelGroup.children[i]
+    
+    
+                        let group_x = parseInt(group.name.split('_')[0])
+                        let group_y = parseInt(group.name.split('_')[1])
+    
+                        let found_at = model_tiles_inside_frustum.indexOf(group.name)
+                        if (found_at >= 0) {
+                            model_tiles_inside_frustum.splice(found_at, 1)
+                        } else {
+                            modelGroup.remove(modelGroup.children[i])
+                            console.log(`'remove model tile: ' ${group_x}, ${group_y}`)
+                        }
                     }
                 }
+                
 
                 $("#panel").html('')
                 for (let i_tile = 0; i_tile < tiles_inside_frustum.length; i_tile++) {
@@ -175,6 +210,13 @@ class ThreeDLODLoader {
                     let i_x = parseInt(xy.split('_')[0])
                     let i_y = parseInt(xy.split('_')[1])
                     loadFloorTile(i_x, i_y)
+                }
+
+                for (let i_tile = 0; i_tile < model_tiles_inside_frustum.length; i_tile++) {
+                    let xy = model_tiles_inside_frustum[i_tile]
+                    let i_x = parseInt(xy.split('_')[0])
+                    let i_y = parseInt(xy.split('_')[1])
+                    loadModelTile(i_x, i_y)
                 }
 
             }
@@ -190,9 +232,7 @@ class ThreeDLODLoader {
     loadBuildings() {
         readTextFile('./MyModels//3d_1216/points.bin', function (arrayBuffer) {
             {
-                console.log(arrayBuffer)
                 const vertices = [];
-                console.log('byte length', arrayBuffer.byteLength);
                 const dataView = new DataView(arrayBuffer)
 
                 let item_length = 12;
@@ -223,7 +263,7 @@ class ThreeDLODLoader {
 
     }
     loadFloorTile(x, y) {
-        console.log(`load tile ${x}, ${y}`)
+        console.log(`load floor tile ${x}, ${y}`)
         readTextFile(`./MyModels//3d_1216/footprints/footprints_${x}_${y}.bin`, function (arrayBuffer) {
             const group = new THREE.Group();
             group.name = `${x}_${y}`
@@ -231,10 +271,8 @@ class ThreeDLODLoader {
                 const color = { color: 0xff0000 };
                 //if ( building.points2d.length > 1 ) color = { color: 0xff0000 }; //multi-polygon 표시
                 const material = new THREE.LineBasicMaterial(color);
-                console.log(arrayBuffer)
                 const vertices = [];
-                let byteLength = arrayBuffer.byteLength
-                console.log('byte length', arrayBuffer.byteLength);
+                let byteLength = arrayBuffer.byteLength;
                 const dataView = new DataView(arrayBuffer)
 
                 let item_length = 12;
@@ -270,8 +308,68 @@ class ThreeDLODLoader {
 
             console.log(`load footprint done ${x}, ${y}`)
             // loadScene();
+            showModelHideFloor();
 
         });
+    }
+
+    loadModelTile(x, y) {
+        console.log(`load model tile ${x}, ${y}`)
+        readTextFile(`./MyModels//3d_1216/3ds/3ds_${x}_${y}.bin`, function (arrayBuffer) {
+            const group = new THREE.Group();
+            group.name = `${x}_${y}`
+            {
+                let byteLength = arrayBuffer.byteLength
+                const dataView = new DataView(arrayBuffer)
+
+                let position = 0;
+
+                while (position < byteLength) {
+                    let n_xy = dataView.getInt32(position + 4 * 0, true)
+                    let points = []
+                    for (let i = 0; i < n_xy / 3; i += 1) {
+                        //                                     4*1: n_items         0,1,2:xyz
+                        let x = dataView.getFloat32(position + 4 * 1 + 4 * (3 * i + 0), true)
+                        let y = dataView.getFloat32(position + 4 * 1 + 4 * (3 * i + 1), true)
+                        let z = dataView.getFloat32(position + 4 * 1 + 4 * (3 * i + 2), true)
+                        points.push(x)
+                        points.push(y)
+                        points.push(z)
+                    }
+                    let mesh = createBuildingModel(points)
+                    group.add(mesh)
+
+                    position += 4 * 1 + 4 * n_xy;
+                }
+            }
+
+            modelGroup.add(group)
+            bim3d.add(modelGroup)
+
+            console.log(`load 3d done ${x}, ${y}`)
+            showModelHideFloor()
+        });
+    }
+
+    showModelHideFloor() {
+
+        for (let i = 0; i < modelGroup.children.length; i++) {
+            let childModelGroup = modelGroup.children[i]
+
+
+            let group_x = parseInt(childModelGroup.name.split('_')[0])
+            let group_y = parseInt(childModelGroup.name.split('_')[1])
+
+
+
+            for (let i = 0; i < floorGroup.children.length; i++) {
+                let group = floorGroup.children[i]
+
+                if (group.name == childModelGroup.name) {
+                    group.visible = false;
+                }
+            }
+        }
     }
 
 
@@ -310,14 +408,16 @@ class ThreeDLODLoader {
 
     }
 
-    readTextFile(file, callback) {
+    readTextFile(file, callback, highPriority = true) {
 
         var xhr = new XMLHttpRequest();
         xhr.open('GET', file, true); //asynchronous: true, synchronous: false
         xhr.responseType = "arraybuffer";
         xhr.onload = function (oEvent) {
+            if (xhr.status == 404) {
+                return;
+            }
             var arrayBuffer = xhr.response; // Note: not xhr.responseText
-            console.log(typeof arrayBuffer)
             callback(arrayBuffer)
         };
         xhr.send(null);
@@ -364,6 +464,35 @@ class ThreeDLODLoader {
         controls.target.copy(boxCenter);
         controls.update();
 
+    }
+
+    /**
+     * 
+     * @param {*} points3d 
+     * @returns mesh
+     */
+    createBuildingModel( points3d ) {
+
+        const vertices = new Float32Array( points3d );
+    
+        var geometry = new THREE.BufferGeometry( );
+        geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+        geometry.computeVertexNormals();
+    
+        geometry.computeBoundingSphere();
+        let material = yellowMaterial;
+        if ( geometry.boundingSphere.radius > 20 )
+            material = redMaterial;
+    
+        const mesh = new THREE.Mesh( geometry, material );
+        // create Outline
+        const edges = new THREE.EdgesGeometry( geometry, 15 );
+        const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0x000000 } ) );
+        mesh.wireframe = line;
+        mesh.add( line );
+    
+        return mesh;
+    
     }
 
 }
