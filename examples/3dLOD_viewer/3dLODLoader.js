@@ -61,16 +61,21 @@ var bim3d;
 var loadModelTile;
 var createBuildingModel;
 var showModelHideFloor;
+
+var grid_resolution = 0;
+var folder = '';
 class ThreeDLODLoader {
-    constructor(_scene, _camera, _controls, _bim3d, folder = 'reorder') {
+    constructor(_scene, _camera, _controls, _bim3d, _folder = 'reorder', _grid_resolution = 1000) {
         this.scene = _scene;
         this.camera = _camera;
         this.controls = _controls;
-        this.folder = folder;
+        this.folder = _folder;
         scene = _scene;
         camera = _camera;
         controls = _controls;
 
+        grid_resolution = _grid_resolution;
+        folder = _folder;
         if (!_bim3d) {
             bim3d = new THREE.Object3D();
         } else {
@@ -123,8 +128,8 @@ class ThreeDLODLoader {
                 let tiles_distances = []
                 for (let i_x = 0; i_x < 39; i_x++) {
                     for (let i_y = 0; i_y < 33; i_y++) {
-                        let real_x = region.x_min + i_x * 1000 + 500
-                        let real_y = region.y_min + i_y * 1000 + 500
+                        let real_x = region.x_min + i_x * grid_resolution + grid_resolution / 2
+                        let real_y = region.y_min + i_y * grid_resolution + grid_resolution / 2
 
                         if (
                             frustum.containsPoint(new THREE.Vector3(real_x - 500, real_y - 500, 0)) ||
@@ -230,7 +235,7 @@ class ThreeDLODLoader {
     ////////////////////////////////////////////////////////////////////////////////////////
     // load building info (metadata + 2d)
     loadBuildings() {
-        readTextFile('./MyModels//3d_1216/points.bin', function (arrayBuffer) {
+        readTextFile(`./MyModels/${folder}/points.bin`, function (arrayBuffer) {
             {
                 const vertices = [];
                 const dataView = new DataView(arrayBuffer)
@@ -264,7 +269,7 @@ class ThreeDLODLoader {
     }
     loadFloorTile(x, y) {
         console.log(`load floor tile ${x}, ${y}`)
-        readTextFile(`./MyModels//3d_1216/footprints/footprints_${x}_${y}.bin`, function (arrayBuffer) {
+        readTextFile(`./MyModels/${folder}/footprints/footprints_${x}_${y}.bin`, function (arrayBuffer) {
             const group = new THREE.Group();
             group.name = `${x}_${y}`
             {
@@ -315,7 +320,7 @@ class ThreeDLODLoader {
 
     loadModelTile(x, y) {
         console.log(`load model tile ${x}, ${y}`)
-        readTextFile(`./MyModels//3d_1216/3ds/3ds_${x}_${y}.bin`, function (arrayBuffer) {
+        readTextFile(`./MyModels/${folder}/3ds/3ds_${x}_${y}.bin`, function (arrayBuffer) {
             const group = new THREE.Group();
             group.name = `${x}_${y}`
             {

@@ -72,7 +72,7 @@ function init() {
 
     // Load Buildings //////////////////////////////////////////////
 
-    let loader = new ThreeDLODLoader(scene, camera, controls)
+    let loader = new ThreeDLODLoader(scene, camera, controls, null, '3d_0120', 500)
     loader.loadBuildings();
 
     /////////////////////////////////////////////////////////////////
