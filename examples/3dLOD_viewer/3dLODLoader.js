@@ -126,16 +126,21 @@ class ThreeDLODLoader {
                 let needBreak = false;
                 let tiles_inside_frustum = []
                 let tiles_distances = []
-                for (let i_x = 0; i_x < 39; i_x++) {
-                    for (let i_y = 0; i_y < 33; i_y++) {
+
+                let i_x_max = Math.ceil( (region.x_max - region.x_min) / grid_resolution )
+                let i_y_max = Math.ceil( (region.y_max - region.y_min) / grid_resolution )
+                console.log('i_x_max', i_x_max)
+                console.log('i_y_max', i_y_max)
+                for (let i_x = 0; i_x < i_x_max; i_x++) {
+                    for (let i_y = 0; i_y < i_y_max; i_y++) {
                         let real_x = region.x_min + i_x * grid_resolution + grid_resolution / 2
                         let real_y = region.y_min + i_y * grid_resolution + grid_resolution / 2
 
                         if (
-                            frustum.containsPoint(new THREE.Vector3(real_x - 500, real_y - 500, 0)) ||
-                            frustum.containsPoint(new THREE.Vector3(real_x - 500, real_y + 500, 0)) ||
-                            frustum.containsPoint(new THREE.Vector3(real_x + 500, real_y - 500, 0)) ||
-                            frustum.containsPoint(new THREE.Vector3(real_x + 500, real_y + 500, 0))
+                            frustum.containsPoint(new THREE.Vector3(real_x - grid_resolution / 2, real_y - grid_resolution / 2, 0)) ||
+                            frustum.containsPoint(new THREE.Vector3(real_x - grid_resolution / 2, real_y + grid_resolution / 2, 0)) ||
+                            frustum.containsPoint(new THREE.Vector3(real_x + grid_resolution / 2, real_y - grid_resolution / 2, 0)) ||
+                            frustum.containsPoint(new THREE.Vector3(real_x + grid_resolution / 2, real_y + grid_resolution / 2, 0))
                         ) {
                             const dist = camera.position.distanceTo(new THREE.Vector3(real_x, real_y, 0));
 
