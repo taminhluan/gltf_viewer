@@ -2,7 +2,8 @@ import * as THREE from '../../build/three.module.js';
 
 
 //////////////////////////////////////////////////////////////////////////////
-var VISIBLE_ITEM = 9
+var VISIBLE_FOOTPRINT_TILE = 9
+var VISIBLE_3D_TILE = 4
 // buildings and regions
 var quadTree = null;
 var treeObjects;	//buildings are saved in treeObjects of Quadtree
@@ -80,6 +81,11 @@ class ThreeDLODLoader {
             bim3d = new THREE.Object3D();
         } else {
             bim3d = _bim3d;
+        }
+
+        if ( _grid_resolution == 500 ) {
+            VISIBLE_FOOTPRINT_TILE = 9 * 4
+            VISIBLE_3D_TILE = 4 * 4
         }
         this.bim3d = bim3d;
         this.scene.add(bim3d);
@@ -168,14 +174,14 @@ class ThreeDLODLoader {
 
                 let model_tiles_inside_frustum = []
                 {// keep n nearest items
-                    tiles_inside_frustum = tiles_inside_frustum.slice(0, VISIBLE_ITEM)
+                    tiles_inside_frustum = tiles_inside_frustum.slice(0, VISIBLE_FOOTPRINT_TILE)
                     
                     for (let i = 0; i < tiles_inside_frustum.length; i++) {
                         let item = tiles_inside_frustum[i]
                         model_tiles_inside_frustum.push(item);
                     }
 
-                    model_tiles_inside_frustum = model_tiles_inside_frustum.slice(0, 4);
+                    model_tiles_inside_frustum = model_tiles_inside_frustum.slice(0, VISIBLE_3D_TILE);
 
                 }
 
