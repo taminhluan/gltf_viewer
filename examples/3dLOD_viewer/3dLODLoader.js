@@ -124,6 +124,7 @@ class ThreeDLODLoader {
         console.log('update building', camera)
         {
             {
+                // get all tiles inside frustum
                 camera.updateMatrix();
                 camera.updateMatrixWorld();
                 var frustum = new THREE.Frustum();
@@ -135,8 +136,7 @@ class ThreeDLODLoader {
 
                 let i_x_max = Math.ceil( (region.x_max - region.x_min) / grid_resolution )
                 let i_y_max = Math.ceil( (region.y_max - region.y_min) / grid_resolution )
-                console.log('i_x_max', i_x_max)
-                console.log('i_y_max', i_y_max)
+                
                 for (let i_x = 0; i_x < i_x_max; i_x++) {
                     for (let i_y = 0; i_y < i_y_max; i_y++) {
                         let real_x = region.x_min + i_x * grid_resolution + grid_resolution / 2
@@ -156,7 +156,7 @@ class ThreeDLODLoader {
                     }
                 }
 
-                { // sort
+                { // sort by distance
                     for (let i = 0; i < tiles_distances.length; i++) {
                         for (let j = i + 1; j < tiles_distances.length; j++) {
                             if (tiles_distances[i] > tiles_distances[j]) {
@@ -221,6 +221,7 @@ class ThreeDLODLoader {
                 
 
                 $("#panel").html('')
+                // Load floor tiles inside frustum
                 for (let i_tile = 0; i_tile < tiles_inside_frustum.length; i_tile++) {
                     let xy = tiles_inside_frustum[i_tile]
                     let i_x = parseInt(xy.split('_')[0])
@@ -228,6 +229,7 @@ class ThreeDLODLoader {
                     loadFloorTile(i_x, i_y)
                 }
 
+                // Load model tiles inside frustum
                 for (let i_tile = 0; i_tile < model_tiles_inside_frustum.length; i_tile++) {
                     let xy = model_tiles_inside_frustum[i_tile]
                     let i_x = parseInt(xy.split('_')[0])
